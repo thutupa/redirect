@@ -19,7 +19,7 @@
       {% for action in matching_actions %}
       <tr {%if action.key.id() == highlight_key %} style='background: #EDEB61' {% endif %}>
 	<td> {{ action.key.id() }} </td>
-	<td> {{ action.actionwords }} </td>
+	<td> {{ action.getActionwordsAsString() }} </td>
 	<td> {{ action.redirect_link }} </td>
 	<td> {{ action.date }} </td>
       </tr>

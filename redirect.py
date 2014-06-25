@@ -13,12 +13,18 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     extensions=['jinja2.ext.autoescape'],
     autoescape=True)
 
+class Account(ndb.Model):
+    user_id = ndb.StringProperty()
+
 class Action(ndb.Model):
     """Models a redirect command."""
     actionwords = ndb.StringProperty(repeated=True)
     redirect_link = ndb.StringProperty(indexed=False)
     user_id = ndb.StringProperty()
     date = ndb.DateTimeProperty(auto_now_add=True)
+
+    def getActionwordsAsString(self):
+        return ', '.join(self.actionwords)
 
 MAX_NUM_ACTION_WORDS = 10
 MAX_ACTION_WORD_LENGTH = 20
@@ -46,6 +52,10 @@ class UserInput(object):
         return self._userInput
     
 
+
+def getAccountKey(userId):
+    return ndb.Key('Account', userId)
+
 # Proposed Final Algorithm
 # 1. Lookup the matches with all action words
 # 2. Score them by incidence
@@ -59,10 +69,10 @@ def fetchMatchingActions(keywords, user):
     assert user
     if keywords:
         input = UserInput(keywords)
-        matchingActionsQuery = Action.query(ndb.AND(Action.actionwords.IN(input.getAllActionWords()),
-                                                    Action.user_id == user.user_id()))
+        matchingActionsQuery = Action.query(Action.actionwords.IN(input.getAllActionWords()),
+                                            ancestor=getAccountKey(user.user_id()))
     else:
-        matchingActionsQuery = Action.query(Action.user_id == user.user_id())
+        matchingActionsQuery = Action.query(ancestor=getAccountKey(user.user_id()))
 
     return matchingActionsQuery.fetch()
 
@@ -104,7 +114,7 @@ class AddPage(webapp2.RequestHandler):
         newKey = None
         if (self.request.get(Constants.ACTION_WORDS_PARAM) and
             self.request.get(Constants.REDIRECT_LINK_PARAM)):
-           newAction = Action()
+           newAction = Action(parent=getAccountKey(user.user_id()))
            newAction.user_id = user.user_id()
            newAction.redirect_link = self.request.get(Constants.REDIRECT_LINK_PARAM)
            newAction.actionwords = UserInput(
