@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+<head>
+  <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
+</head>
+  <body>
+    Hello {{ user_nickname }}
+    <form action="{{ Constants.ADD_PAGE_PATH }}" method="post">
+      <div>Action Words: <input size="80" name="{{ Constants.ACTION_WORDS_PARAM }}"
+				value="{{actionwords_input}}"/></div>
+      <div>Redirect Link: <input size="80" name="{{ Constants.REDIRECT_LINK_PARAM }}"
+				 value="{{redirect_link_input}}"/></div>
+      <div><input type="submit" value="Create new action"/></div>
+    </form>
+  </body>
+</html>
+{% endautoescape %}

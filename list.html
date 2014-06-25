@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+<head>
+  <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+</head>
+  <body>
+    Hello {{ user_nickname }}
+    {% if match %} Applying Match: <b> {{ match }} </b> {% endif %}
+    {% if matching_actions %}
+    <table>
+      <tr>
+	<th> Id </th>
+	<th> Action Words </th>
+	<th> Redirect Link </th>
+	<th> Added Date </th>
+      </tr>
+      {% for action in matching_actions %}
+      <tr>
+	<td> {{ action.key.id() }} </td>
+	<td> {{ action.actionwords }} </td>
+	<td> {{ action.redirect_link }} </td>
+	<td> {{ action.date }} </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+
+    <form action="{{Constants.LIST_PAGE_PATH}}" method="post">
+      <div>Match: <input size="80" name="{{Constants.MATCH_PARAM}}" value="{{match}}"/> <input type="submit" value="Match!"/></div>
+    </form>
+    <script type="text/javascript">
+      var matchInput = $('input[name={{Constants.MATCH_PARAM}}]');
+      if (matchInput.val()) {
+        matchInput.focus();
+      }
+    </script>
+      
+      
+  </body>
+</html>
+{% endautoescape %}
