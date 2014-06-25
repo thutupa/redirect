@@ -66,8 +66,9 @@ def fetchMatchingActions(keywords, user):
 
     return matchingActionsQuery.fetch()
 
-# TODO(syam): Deal with XSRF.
+
 class ListPage(webapp2.RequestHandler):
+    # Post method is needed when the user submits attempts to use matching 
     def post(self): return self.get()
     def get(self):
         user = users.get_current_user()
@@ -78,16 +79,19 @@ class ListPage(webapp2.RequestHandler):
 
         assert user
         match = self.request.get(Constants.MATCH_PARAM, '')
+        highlightKey = self.request.get(Constants.NEW_KEY_PARAM, '0')
         matchingUserActions = fetchMatchingActions(match, user)
         template_values = { 'user_nickname': user.nickname(),
                             'matching_actions': matchingUserActions,
                             'user_id': user.user_id(),
                             'match': match,
-                            'Constants': Constants.instance()}
+                            'Constants': Constants.instance(),
+                            'highlight_key': int(highlightKey)}
 
         template = JINJA_ENVIRONMENT.get_template('list.html')
         self.response.write(template.render(template_values))
 
+# TODO(syam): Deal with XSRF.
 class AddPage(webapp2.RequestHandler):
     def post(self):
         user = users.get_current_user()
@@ -107,7 +111,8 @@ class AddPage(webapp2.RequestHandler):
                self.request.get(Constants.ACTION_WORDS_PARAM)).getAllActionWords()
            newKey = newAction.put()
            # TODO(syam): Figure out how to use newKey in displaying the list.
-           return self.redirect(Constants.LIST_PAGE_PATH)
+           return self.redirect(Constants.LIST_PAGE_PATH + '?' +
+                                Constants.NEW_KEY_PARAM + '=' + str(newKey.id()))
         # Fallback to the get.
         return self.get()
 
@@ -134,6 +139,7 @@ class Constants:
     ACTION_WORDS_PARAM = 'actionwords'
     REDIRECT_LINK_PARAM = 'redirect_link'
     MATCH_PARAM = 'match'
+    NEW_KEY_PARAM = 'new_key'
     @staticmethod
     def instance():
         global CONSTANTS_INSTANCE

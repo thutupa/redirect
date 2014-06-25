@@ -17,7 +17,7 @@
 	<th> Added Date </th>
       </tr>
       {% for action in matching_actions %}
-      <tr>
+      <tr {%if action.key.id() == highlight_key %} style='background: #EDEB61' {% endif %}>
 	<td> {{ action.key.id() }} </td>
 	<td> {{ action.actionwords }} </td>
 	<td> {{ action.redirect_link }} </td>
