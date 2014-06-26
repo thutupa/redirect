@@ -11,17 +11,13 @@
     {% if matching_actions %}
     <table>
       <tr>
-	<th> Id </th>
 	<th> Action Words </th>
-	<th> Redirect Link </th>
 	<th> Added Date </th>
       </tr>
       {% for action in matching_actions %}
       <tr {%if action.key.id() == highlight_key %} style='background: #EDEB61' {% endif %}>
-	<td> {{ action.key.id() }} </td>
-	<td> {{ action.getActionwordsAsString() }} </td>
-	<td> {{ action.redirect_link }} </td>
-	<td> {{ action.date }} </td>
+	<td> <a href="{{ action.redirect_link }}">{{action.getActionwordsAsString()}}</a> </td>
+	<td>{{ action.date.strftime('%Y-%m-%d') }}</td>
       </tr>
       {% endfor %}
     </table>

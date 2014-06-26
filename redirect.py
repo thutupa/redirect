@@ -13,9 +13,6 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     extensions=['jinja2.ext.autoescape'],
     autoescape=True)
 
-class Account(ndb.Model):
-    user_id = ndb.StringProperty()
-
 class Action(ndb.Model):
     """Models a redirect command."""
     actionwords = ndb.StringProperty(repeated=True)
@@ -24,7 +21,11 @@ class Action(ndb.Model):
     date = ndb.DateTimeProperty(auto_now_add=True)
 
     def getActionwordsAsString(self):
-        return ', '.join(self.actionwords)
+        return '[' + ', '.join(self.actionwords) + ']'
+
+    def getRedirectLink(self, userInput=None):
+        # TODO(syam): Actually use the user input to create the redirect
+        return self.redirect_link
 
 MAX_NUM_ACTION_WORDS = 10
 MAX_ACTION_WORD_LENGTH = 20
@@ -121,8 +122,8 @@ class AddPage(webapp2.RequestHandler):
                self.request.get(Constants.ACTION_WORDS_PARAM)).getAllActionWords()
            newKey = newAction.put()
            # TODO(syam): Figure out how to use newKey in displaying the list.
-           return self.redirect(Constants.LIST_PAGE_PATH + '?' +
-                                Constants.NEW_KEY_PARAM + '=' + str(newKey.id()))
+           return self.redirect(listPagePath(Constants.NEW_KEY_PARAM, str(newKey.id())))
+                                
         # Fallback to the get.
         return self.get()
 
@@ -142,10 +143,39 @@ class AddPage(webapp2.RequestHandler):
         template = JINJA_ENVIRONMENT.get_template('add.html')
         self.response.write(template.render(template_values))
 
+class RedirectPage(webapp2.RequestHandler):
+    def get(self):
+        user = users.get_current_user()
+        if not user:
+            # Send the user to the login page
+            self.redirect(users.create_login_url(self.request.uri))
+            return
+
+        assert user
+        match = self.request.get(Constants.MATCH_PARAM, '')
+        matchingUserActions = fetchMatchingActions(match, user)
+        firstAction = None
+        for action in matchingUserActions:
+            if firstAction is None:
+                firstAction = action
+            else:
+                # If we get more than one result, redirect
+                firstAction = None
+                break
+
+        if firstAction is None:
+            return self.redirect(listPagePath(Constants.MATCH_PARAM, match))
+        else:
+            return self.redirect(str(firstAction.getRedirectLink(UserInput(match))))
+
+def listPagePath(param, value):
+    return Constants.LIST_PAGE_PATH + '?' + param + '=' + value
+
 CONSTANTS_INSTANCE = None
 class Constants:
     LIST_PAGE_PATH = '/'
     ADD_PAGE_PATH = '/add'
+    REDIRECT_PAGE_PATH = '/redir'
     ACTION_WORDS_PARAM = 'actionwords'
     REDIRECT_LINK_PARAM = 'redirect_link'
     MATCH_PARAM = 'match'
@@ -160,4 +190,5 @@ class Constants:
 application = webapp2.WSGIApplication([
     (Constants.LIST_PAGE_PATH, ListPage),
     (Constants.ADD_PAGE_PATH, AddPage),
+    (Constants.REDIRECT_PAGE_PATH, RedirectPage),
 ], debug=True)
