@@ -24,6 +24,9 @@ class Action(ndb.Model):
     def getActionwordsAsString(self):
         return '[' + ', '.join(self.actionwords) + ']'
 
+    def getActionwordsAsPhrase(self):
+        return ' '.join(self.actionwords)
+
     def getRedirectLink(self, userInput=None):
         # TODO(syam): Actually use the user input to create the redirect
         return self.redirect_link
@@ -102,8 +105,9 @@ class ListPage(webapp2.RequestHandler):
         template = JINJA_ENVIRONMENT.get_template('list.html')
         self.response.write(template.render(template_values))
 
-# TODO(syam): Deal with XSRF.
+
 class AddPage(webapp2.RequestHandler):
+    def get(self): self.post()
     def post(self):
         user = users.get_current_user()
         if not user:
@@ -115,26 +119,22 @@ class AddPage(webapp2.RequestHandler):
         newKey = None
         if (self.request.get(Constants.ACTION_WORDS_PARAM) and
             self.request.get(Constants.REDIRECT_LINK_PARAM)):
-           newAction = Action(parent=getAccountKey(user.user_id()))
-           newAction.user_id = user.user_id()
-           newAction.redirect_link = self.request.get(Constants.REDIRECT_LINK_PARAM)
-           newAction.actionwords = UserInput(
-               self.request.get(Constants.ACTION_WORDS_PARAM)).getAllActionWords()
-           newKey = newAction.put()
-           # TODO(syam): Figure out how to use newKey in displaying the list.
-           return self.redirect(listPagePath(Constants.NEW_KEY_PARAM, str(newKey.id())))
+            if self.request.get(Constants.ACTION_ID_PARAM):
+                newAction = ndb.Key('Action', int(self.request.get(Constants.ACTION_ID_PARAM)),
+                                    parent=getAccountKey(user.user_id())).get()
+            else:
+                newAction = Action(parent=getAccountKey(user.user_id()))
+                newAction.user_id = user.user_id()
+
+            newAction.redirect_link = self.request.get(Constants.REDIRECT_LINK_PARAM)
+            newAction.actionwords = UserInput(
+                self.request.get(Constants.ACTION_WORDS_PARAM)).getAllActionWords()
+            newKey = newAction.put()
+            if self.request.get(Constants.AJAX_REQUEST_PARAM):
+                return ajaxSuccess(self)
+            print 'redirecting to list'
+            return self.redirect(listPagePath(Constants.NEW_KEY_PARAM, str(newKey.id())))
                                 
-        # Fallback to the get.
-        return self.get()
-
-    def get(self):
-        user = users.get_current_user()
-        if not user:
-            # Send the user to the login page
-            self.redirect(users.create_login_url(self.request.uri))
-            return
-
-        assert user
         template_values = { 'user_nickname': user.nickname(),
                             'Constants': Constants.instance(),
                             'actionwords_input': self.request.get(Constants.ACTION_WORDS_PARAM),
@@ -168,6 +168,15 @@ class RedirectPage(webapp2.RequestHandler):
         else:
             return self.redirect(str(firstAction.getRedirectLink(UserInput(match))))
 
+def ajaxSuccess(handler):
+    handler.response.headers['Content-Type'] = 'text/plain'
+    handler.response.write('Success.')
+
+class EchoPage(webapp2.RequestHandler):
+    def get(self):
+        return ajaxSuccess(self)
+    def post(self): self.get()
+
 def listPagePath(param, value):
     return Constants.LIST_PAGE_PATH + '?' + param + '=' + value
 
@@ -176,4 +185,5 @@ application = webapp2.WSGIApplication([
     (Constants.ADD_PAGE_PATH, AddPage),
     (Constants.REDIRECT_PAGE_PATH, RedirectPage),
     (Constants.XSRF_SECRET_PAGE_PATH, xsrfstorage.InsertXSRF),
+    (Constants.ECHO_PAGE_PATH, EchoPage),
 ], debug=True)

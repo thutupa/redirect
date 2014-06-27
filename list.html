@@ -4,6 +4,9 @@
 <head>
   <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
   <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/themes/smoothness/jquery-ui.css" />
+  <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>
+    
 </head>
   <body>
     Hello {{ user_nickname }}
@@ -11,28 +14,84 @@
     {% if matching_actions %}
     <table>
       <tr>
+	<th> E </th>
 	<th> Action Words </th>
 	<th> Added Date </th>
       </tr>
       {% for action in matching_actions %}
       <tr {%if action.key.id() == highlight_key %} style='background: #EDEB61' {% endif %}>
+	<td> <button onclick="editEntry('{{action.key.id()}}', '{{action.getActionwordsAsPhrase()}}', '{{action.redirect_link}}');">Edit</td>
 	<td> <a href="{{ action.redirect_link }}">{{action.getActionwordsAsString()}}</a> </td>
 	<td>{{ action.date.strftime('%Y-%m-%d') }}</td>
       </tr>
       {% endfor %}
     </table>
     {% endif %}
+    <button onclick="addEntry();">Add new Entry</button>
 
     <form action="{{Constants.LIST_PAGE_PATH}}" method="post">
       <div>Match: <input size="80" name="{{Constants.MATCH_PARAM}}" value="{{match}}"/> <input type="submit" value="Match!"/></div>
     </form>
     <script type="text/javascript">
+      function actionIdInput(editDialog) {
+        return editDialog.find('[name={{Constants.ACTION_ID_PARAM}}]');
+      }
+      function actionWordsInput(editDialog) {
+        return editDialog.find('[name={{Constants.ACTION_WORDS_PARAM}}]');
+      }
+      function redirectLinkInput(editDialog) {
+        return editDialog.find('[name={{Constants.REDIRECT_LINK_PARAM}}]');
+      }
+      
+      function addEntry() {
+        editEntry('', '', '');
+      }
+
+      function editEntry(id, phrase, link) {
+        var editDialog = $('#editDialog');
+        actionIdInput(editDialog).val(id);
+        actionWordsInput(editDialog).val(phrase);
+        redirectLinkInput(editDialog).val(link);
+        editDialog.dialog({modal: true});
+      }
+
+      function submitEntry() {
+        var editDialog = $('#editDialog');
+        var id = actionIdInput(editDialog).val();
+        var phrase = actionWordsInput(editDialog).val();
+        var link = redirectLinkInput(editDialog).val();
+        $.ajax('{{Constants.ADD_PAGE_PATH}}' +
+              '?{{ Constants.ACTION_ID_PARAM }}=' + encodeURIComponent(id) +
+              '&{{ Constants.ACTION_WORDS_PARAM }}=' + encodeURIComponent(phrase) +
+              '&{{ Constants.REDIRECT_LINK_PARAM }}=' + encodeURIComponent(link) +
+              '&{{ Constants.AJAX_REQUEST_PARAM}}=true').
+              done(entrySubmitSuccess).
+              fail(entrySubmitFailure);
+      }
+
+      function entrySubmitSuccess() {
+        var editDialog = $('#editDialog').dialog("close");
+        window.location.href = window.location.href;
+      }
+
+      function entrySubmitFailure() {
+        $('#dialogError').html("Could not submit");
+      }
       var matchInput = $('input[name={{Constants.MATCH_PARAM}}]');
       if (matchInput.val()) {
         matchInput.focus();
       }
+
     </script>
-      
+    <div id="editDialog" style="display: none">
+      <input type="hidden" name="{{ Constants.ACTION_ID_PARAM }}" value=""/>
+      <div>Action Words: <input size="80" name="{{ Constants.ACTION_WORDS_PARAM }}"
+				value=""/></div>
+      <div>Redirect Link: <input size="80" name="{{ Constants.REDIRECT_LINK_PARAM }}"
+				 value=""/></div>
+      <button onclick="submitEntry();">Submit</button>
+      <div id="dialogError" style="text-color: red"></div>
+    </div>
       
   </body>
 </html>
