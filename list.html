@@ -48,11 +48,13 @@
       }
 
       function editEntry(id, phrase, link) {
+        $('#dialogError').html('');
         var editDialog = $('#editDialog');
         actionIdInput(editDialog).val(id);
         actionWordsInput(editDialog).val(phrase);
         redirectLinkInput(editDialog).val(link);
-        editDialog.dialog({modal: true});
+        $('#editForm').submit(submitEntry);
+        editDialog.dialog({modal: true, width: 800});
       }
 
       function submitEntry() {
@@ -74,8 +76,8 @@
         window.location.href = window.location.href;
       }
 
-      function entrySubmitFailure() {
-        $('#dialogError').html("Could not submit");
+      function entrySubmitFailure(xhr) {
+        $('#dialogError').html("Could not submit: " + xhr.responseText);
       }
       var matchInput = $('input[name={{Constants.MATCH_PARAM}}]');
       if (matchInput.val()) {
@@ -84,15 +86,16 @@
 
     </script>
     <div id="editDialog" style="display: none">
-      <input type="hidden" name="{{ Constants.ACTION_ID_PARAM }}" value=""/>
-      <div>Action Words: <input size="80" name="{{ Constants.ACTION_WORDS_PARAM }}"
-				value=""/></div>
-      <div>Redirect Link: <input size="80" name="{{ Constants.REDIRECT_LINK_PARAM }}"
-				 value=""/></div>
+      <form id="editForm">
+	<div id="dialogError" style="color: red"></div>
+	<input type="hidden" name="{{ Constants.ACTION_ID_PARAM }}" value=""/>
+	<div>Action Words: <input size="80" name="{{ Constants.ACTION_WORDS_PARAM }}"
+				  value=""/></div>
+	<div>Redirect Link: <input size="80" name="{{ Constants.REDIRECT_LINK_PARAM }}"
+				   value=""/></div>
+      </form>
       <button onclick="submitEntry();">Submit</button>
-      <div id="dialogError" style="text-color: red"></div>
     </div>
-      
   </body>
 </html>
 {% endautoescape %}

@@ -132,9 +132,10 @@ class AddPage(webapp2.RequestHandler):
             newKey = newAction.put()
             if self.request.get(Constants.AJAX_REQUEST_PARAM):
                 return ajaxSuccess(self)
-            print 'redirecting to list'
+
             return self.redirect(listPagePath(Constants.NEW_KEY_PARAM, str(newKey.id())))
-                                
+        if self.request.get(Constants.AJAX_REQUEST_PARAM):
+            return ajaxFailure(self)
         template_values = { 'user_nickname': user.nickname(),
                             'Constants': Constants.instance(),
                             'actionwords_input': self.request.get(Constants.ACTION_WORDS_PARAM),
@@ -171,6 +172,11 @@ class RedirectPage(webapp2.RequestHandler):
 def ajaxSuccess(handler):
     handler.response.headers['Content-Type'] = 'text/plain'
     handler.response.write('Success.')
+
+def ajaxFailure(handler):
+    handler.response.set_status(500)
+    handler.response.headers['Content-Type'] = 'text/plain'
+    handler.response.write('Not Enough Data Provided.')
 
 class EchoPage(webapp2.RequestHandler):
     def get(self):
