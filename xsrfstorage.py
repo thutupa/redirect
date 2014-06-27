@@ -33,11 +33,10 @@ def GetXsrfSecret():
 class InsertXSRF(webapp2.RequestHandler):
     def get(self):
         secret = self.request.get(Constants.XSRF_SECRET_PARAM, '')
-        assert secret
-        #assert users.get_current_user() and users.is_current_user_admin()
-        # decode
-        secret = str(xsrfutil.base64Decode(str(secret)))
-        insertOrUpdateSecret(secret)
+        assert users.get_current_user() and users.is_current_user_admin()
+        if secret:
+            secret = str(xsrfutil.base64Decode(str(secret)))
+            insertOrUpdateSecret(secret)
         self.response.headers['Content-Type'] = 'text/plain'
-        self.response.write('Updated: ' + xsrfutil.base64Encode(str(GetXsrfSecret())))
+        self.response.write('xsrf: ' + xsrfutil.base64Encode(str(GetXsrfSecret())))
 
