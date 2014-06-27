@@ -6,7 +6,8 @@ from google.appengine.ext import ndb
 
 import jinja2
 import webapp2
-
+import xsrfstorage
+from constants import Constants
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -52,7 +53,6 @@ class UserInput(object):
     def getOriginalInput(self):
         return self._userInput
     
-
 
 def getAccountKey(userId):
     return ndb.Key('Account', userId)
@@ -171,24 +171,9 @@ class RedirectPage(webapp2.RequestHandler):
 def listPagePath(param, value):
     return Constants.LIST_PAGE_PATH + '?' + param + '=' + value
 
-CONSTANTS_INSTANCE = None
-class Constants:
-    LIST_PAGE_PATH = '/'
-    ADD_PAGE_PATH = '/add'
-    REDIRECT_PAGE_PATH = '/redir'
-    ACTION_WORDS_PARAM = 'actionwords'
-    REDIRECT_LINK_PARAM = 'redirect_link'
-    MATCH_PARAM = 'match'
-    NEW_KEY_PARAM = 'new_key'
-    @staticmethod
-    def instance():
-        global CONSTANTS_INSTANCE
-        if CONSTANTS_INSTANCE is None:
-            CONSTANTS_INSTANCE = Constants()
-        return CONSTANTS_INSTANCE
-
 application = webapp2.WSGIApplication([
     (Constants.LIST_PAGE_PATH, ListPage),
     (Constants.ADD_PAGE_PATH, AddPage),
     (Constants.REDIRECT_PAGE_PATH, RedirectPage),
+    (Constants.XSRF_SECRET_PAGE_PATH, xsrfstorage.InsertXSRF),
 ], debug=True)
