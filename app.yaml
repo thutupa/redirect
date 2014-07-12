@@ -5,8 +5,8 @@ api_version: 1
 threadsafe: true
 
 handlers:
-- url: /stylesheets
-  static_dir: stylesheets
+- url: /v1/stylesheets
+  static_dir: v1/stylesheets
 
 - url: /.*
   script: redirect.application
